@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Médico</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="medico.css">
+</head>
+
+<body class="medico-page">
+
+<div class="container">
+
+  <!-- Cabeçalho -->
+  <header class="medico-header">
+    <img class="logo" src="logo.png" alt="" onerror="this.remove()">
+    <div class="medico-titulo">
+      <h2>Painel médico</h2>
+      <p>Atenda os pacientes triados e registre a consulta.</p>
+    </div>
+    <button type="button" class="btn-abrir-tv" onclick="window.open('tv.html','_blank')">📺 Abrir tela da TV</button>
+  </header>
+
+  <div class="gothic-divider">✦</div>
+
+  <!-- Consultório -->
+  <div class="consultorio-input">
+    <label for="consultorio-num">Meu consultório</label>
+    <input type="text" id="consultorio-num" value="01" maxlength="4" inputmode="numeric">
+    <span>Este número aparece na TV ao chamar o paciente.</span>
+  </div>
+
+  <!-- Fila -->
+  <div class="secao-titulo">
+    <h3>Pacientes triados <span class="contador" id="contador-fila">0</span></h3>
+    <span id="ultima-atualizacao">Atualiza a cada 10 segundos</span>
+  </div>
+
+  <div id="triagens" aria-live="polite"></div>
+
+  <hr>
+
+  <!-- Consulta -->
+  <div class="secao-titulo">
+    <h3>Consulta</h3>
+  </div>
+
+  <div class="consulta-form">
+
+    <div id="alerta-alergia" class="alerta-alergia" role="alert"></div>
+
+    <div class="campo">
+      <label for="paciente">Paciente</label>
+      <input id="paciente" placeholder="Clique em “Atender” em um paciente da fila" readonly>
+    </div>
+
+    <div class="campo">
+      <label for="medicacao">Medicação</label>
+      <select id="medicacao">
+        <option value="">Selecione a medicação</option>
+      </select>
+    </div>
+
+    <div class="campo full">
+      <label for="diagnostico">Diagnóstico</label>
+      <input id="diagnostico" placeholder="Diagnóstico do paciente" autocomplete="off">
+    </div>
+
+    <div class="campo full">
+      <label for="obs">Observações</label>
+      <textarea id="obs" placeholder="Orientações e observações da consulta"></textarea>
+    </div>
+
+    <div class="acoes">
+      <button type="button" id="btn-salvar" onclick="salvar()">Salvar consulta</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+<script>
+
+let triagensCarregadas = [];
+let pacienteAtual = "";
+
+/* ---------- Utilidades ---------- */
+
+let avisoTimer;
+function mostrarAviso(msg, erro = false) {
+  const el = document.getElementById("aviso");
+  el.textContent = msg;
+  el.classList.toggle("erro", erro);
+  el.classList.add("visivel");
+  clearTimeout(avisoTimer);
+  avisoTimer = setTimeout(() => el.classList.remove("visivel"), 4000);
+}
+
+function campo(rotulo, valor, classe) {
+  const p = document.createElement("p");
+  if (classe) p.className = classe;
+  const b = document.createElement("b");
+  b.textContent = rotulo + " ";
+  p.append(b, document.createTextNode(valor));
+  return p;
+}
+
+const ordemRisco = { vermelho: 0, amarelo: 1, verde: 2 };
+const nomeRisco = { vermelho: "Vermelho", amarelo: "Amarelo", verde: "Verde" };
+
+function temAlergia(t) {
+  return t.alergia && t.alergia.trim() !== "" && t.alergia.trim().toLowerCase() !== "nenhuma";
+}
+
+/* ---------- Fila ---------- */
+
+async function carregar() {
+  const div = document.getElementById("triagens");
+
+  try {
+    const resposta = await fetch("/triagens");
+    const data = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(data.erro || "Erro ao buscar triagens.");
+    }
+
+    // Casos mais graves primeiro (sort é estável: dentro do mesmo risco, mantém a ordem original)
+    triagensCarregadas = [...data].sort(
+      (a, b) => (ordemRisco[a.risco] ?? 3) - (ordemRisco[b.risco] ?? 3)
+    );
+
+    document.getElementById("contador-fila").textContent = triagensCarregadas.length;
+    document.getElementById("ultima-atualizacao").textContent =
+      "Atualizado às " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    div.innerHTML = "";
+
+    if (triagensCarregadas.length === 0) {
+      div.innerHTML = "<p class='fila-vazia'>Nenhum paciente na fila.</p>";
+      return;
+    }
+
+    triagensCarregadas.forEach((t, index) => {
+      const risco = ordemRisco[t.risco] === undefined ? "" : t.risco;
+
+      const card = document.createElement("div");
+      card.className = "card" + (risco ? " risco-" + risco : "") +
+        (t.nome === pacienteAtual ? " selecionado" : "");
+
+      const topo = document.createElement("div");
+      topo.className = "card-topo";
+
+      const titulo = document.createElement("h3");
+      titulo.textContent = t.nome;
+
+      const selo = document.createElement("span");
+      selo.className = "selo " + (risco || "sem-risco");
+      selo.textContent = risco ? nomeRisco[risco] : "Não classificado";
+
+      topo.append(titulo, selo);
+
+      const dados = document.createElement("div");
+      dados.className = "card-dados";
+      dados.append(
+        campo("Sintoma:", t.sintoma || "Não informado"),
+        campo("Temperatura:", t.temperatura == null ? "Não informada" : `${t.temperatura}°C`),
+        campo("Alergia:", t.alergia || "Nenhuma", temAlergia(t) ? "alergia-forte" : ""),
+        campo("Observação:", t.observacao || "Nenhuma", "full")
+      );
+      // campos de texto longo ocupam a linha inteira
+      dados.children[2].classList.add("full");
+
+      const acoes = document.createElement("div");
+      acoes.className = "card-acoes";
+
+      const botaoAtender = document.createElement("button");
+      botaoAtender.type = "button";
+      botaoAtender.textContent = "Atender";
+      botaoAtender.addEventListener("click", () => selecionar(index));
+
+      const botaoTV = document.createElement("button");
+      botaoTV.type = "button";
+      botaoTV.className = "btn-tv btn-secundario";
+      botaoTV.textContent = "📺 Chamar na TV";
+      botaoTV.addEventListener("click", () => chamarNaTV(t.nome));
+
+      acoes.append(botaoAtender, botaoTV);
+      card.append(topo, dados, acoes);
+      div.appendChild(card);
+    });
+
+  } catch (erro) {
+    console.error("Erro ao carregar pacientes:", erro);
+    div.innerHTML =
+      "<p class='fila-erro'>Erro ao carregar os pacientes. Verifique se o servidor está funcionando.</p>";
+  }
+}
+
+function chamarNaTV(nome) {
+  const consultorio = document.getElementById("consultorio-num").value.trim() || "01";
+  fetch("/tv/chamar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      localTipo: "CONSULTÓRIO",
+      localNumero: consultorio,
+      paciente: nome
+    })
+  })
+  .then(r => r.json())
+  .then(() => mostrarAviso("✅ " + nome + " foi chamado na TV para o Consultório " + consultorio + "."))
+  .catch(() => mostrarAviso("Não foi possível chamar o paciente na TV.", true));
+}
+
+/* ---------- Atendimento ---------- */
+
+function selecionar(index) {
+  const t = triagensCarregadas[index];
+  pacienteAtual = t.nome;
+
+  document.getElementById("paciente").value = t.nome;
+  document.getElementById("obs").value = t.observacao || "";
+
+  const alerta = document.getElementById("alerta-alergia");
+  alerta.textContent = temAlergia(t) ? "⚠️ Paciente com alergia: " + t.alergia : "";
+
+  // marca o card selecionado sem recarregar a lista
+  document.querySelectorAll("#triagens .card").forEach((card, i) => {
+    card.classList.toggle("selecionado", i === index);
+  });
+
+  document.getElementById("paciente").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function carregarMedicacoes() {
+  fetch("/lista-medicacoes")
+    .then(r => r.json())
+    .then(data => {
+      const select = document.getElementById("medicacao");
+      select.innerHTML = `<option value="">Selecione a medicação</option>`;
+      data.forEach(med => {
+        const option = document.createElement("option");
+        option.value = med;
+        option.textContent = med;
+        select.appendChild(option);
+      });
+    })
+    .catch(() => mostrarAviso("Não foi possível carregar a lista de medicações.", true));
+}
+
+async function salvar() {
+  const paciente = document.getElementById("paciente").value;
+  const diagnostico = document.getElementById("diagnostico").value;
+  const medicacao = document.getElementById("medicacao").value;
+  const obs = document.getElementById("obs").value;
+  const botao = document.getElementById("btn-salvar");
+
+  if (!paciente) { mostrarAviso("Selecione um paciente clicando em Atender.", true); return; }
+  if (!medicacao) { mostrarAviso("Selecione uma medicação.", true); document.getElementById("medicacao").focus(); return; }
+
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+
+  try {
+    const resposta = await fetch("/consulta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paciente, diagnostico, medicacao, obs })
+    });
+    const data = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(data.erro || "Não foi possível salvar a consulta.");
+    }
+
+    mostrarAviso("Consulta de " + paciente + " salva.");
+
+    ["paciente", "diagnostico", "medicacao", "obs"].forEach(id => {
+      document.getElementById(id).value = "";
+    });
+    document.getElementById("alerta-alergia").textContent = "";
+    pacienteAtual = "";
+
+    carregar();
+
+  } catch (erro) {
+    console.error("Erro ao salvar consulta:", erro);
+    mostrarAviso("Erro ao salvar a consulta: " + erro.message, true);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Salvar consulta";
+  }
+}
+
+carregar();
+carregarMedicacoes();
+
+// Atualiza a lista automaticamente a cada 10 segundos
+setInterval(carregar, 10000);
+
+</script>
+
+</body>
+</html>

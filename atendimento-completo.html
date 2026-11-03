@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepção Noturna — Noctis</title>
+
+    <link rel="stylesheet" href="style.css">
+    <style>
+
+
+.recepcao-page {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recepcao-page .container {
+    width: min(100%, 780px);
+    padding: 40px 44px 36px;
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.recepcao-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.recepcao-header .logo {
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+}
+
+.recepcao-header h2 {
+    margin: 0;
+    font-size: clamp(24px, 3vw, 30px);
+    letter-spacing: 0.08em;
+    line-height: 1.15;
+}
+
+.recepcao-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+}
+
+.recepcao-page .gothic-divider {
+    margin: 26px 0 30px;
+}
+
+.recepcao-page .gothic-divider::before,
+.recepcao-page .gothic-divider::after {
+    flex: 1;
+    width: auto;
+}
+
+/* ---------- Ficha: retrato + campos ---------- */
+
+.ficha {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+}
+
+.retrato {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding-right: 36px;
+    border-right: 1px solid var(--border);
+}
+
+/* moldura em arco, como uma janela gótica */
+.retrato-moldura {
+    width: 100%;
+    max-width: 156px;
+    aspect-ratio: 4 / 5;
+    margin: 6px;
+
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+
+    color: var(--gold-soft);
+    background: var(--bg-input);
+    border: 1px solid var(--gold-soft);
+    border-radius: 999px 999px 10px 10px;
+    outline: 1px solid var(--border);
+    outline-offset: 5px;
+}
+
+.retrato-moldura svg {
+    width: 58px;
+    height: 58px;
+}
+
+.retrato-moldura img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* input real escondido; o label faz o papel de botão */
+.retrato input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.retrato-botao {
+    margin: 0;
+    padding: 10px 18px;
+
+    color: var(--gold);
+    font-size: 12px;
+    text-align: center;
+
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    cursor: pointer;
+
+    transition:
+        border-color var(--transition),
+        background var(--transition),
+        color var(--transition);
+}
+
+.retrato-botao:hover {
+    color: #e1c58e;
+    border-color: var(--gold);
+    background: rgba(184, 154, 98, 0.08);
+}
+
+.retrato input[type="file"]:focus-visible + .retrato-botao {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+}
+
+/* ---------- Campos ---------- */
+
+.recepcao-page .campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+    align-content: start;
+    padding-left: 36px;
+}
+
+.recepcao-page .campo {
+    margin-bottom: 22px;
+}
+
+.recepcao-page .campo.full {
+    grid-column: 1 / -1;
+}
+
+.recepcao-page .campo input,
+.recepcao-page .campo select {
+    margin: 0;
+}
+
+.recepcao-page select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 42px;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23b89a62' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+
+/* ---------- Ação ---------- */
+
+.recepcao-page .acoes button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 30px;
+    font-size: 13px;
+}
+
+/* ---------- Telas pequenas ---------- */
+
+@media (max-width: 700px) {
+    .recepcao-page .container {
+        padding: 28px 20px 24px;
+    }
+
+    .ficha {
+        grid-template-columns: 1fr;
+    }
+
+    .retrato {
+        padding: 0 0 26px;
+        margin-bottom: 26px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .recepcao-page .campos {
+        padding-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .recepcao-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+    }
+
+    .recepcao-page .campos {
+        grid-template-columns: 1fr;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+<main class="recepcao-page">
+    <section class="container">
+
+        <header class="recepcao-header">
+            <img src="vampiro2.png" alt="Emblema do Instituto Noctis" class="logo">
+            <div>
+                <h2>Recepção Noturna</h2>
+                <p>Registro e encaminhamento de pacientes da instituição.</p>
+            </div>
+        </header>
+
+        <div class="gothic-divider"><span>✦</span></div>
+
+        <div class="ficha">
+
+            <div class="retrato">
+                <div class="retrato-moldura" id="fotoPreview">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3.5"/>
+                        <path d="M5 20c0-3.9 3.1-6 7-6s7 2.1 7 6"/>
+                    </svg>
+                </div>
+
+                <input type="file" id="foto">
+                <label for="foto" class="retrato-botao">Escolher foto</label>
+            </div>
+
+            <div class="campos">
+                <div class="campo full">
+                    <label for="nome">Nome</label>
+                    <input id="nome" placeholder="Nome completo">
+                </div>
+
+                <div class="campo">
+                    <label for="cpf">CPF</label>
+                    <input id="cpf" placeholder="000.000.000-00">
+                </div>
+
+                <div class="campo">
+                    <label for="tipo">Atendimento</label>
+                    <select id="tipo">
+                        <option>Convenio</option>
+                        <option>Particular</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="acoes">
+            <button onclick="cadastrar()">Registrar Paciente</button>
+        </div>
+
+    </section>
+</main>
+
+<script>
+function cadastrar(){
+ fetch("http://localhost:3000/atendimento",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body: JSON.stringify({
+    nome: nome.value,
+    cpf: cpf.value,
+    tipo: tipo.value
+  })
+ });
+ alert("Paciente enviado para triagem");
+}
+
+// Apenas visual: mostra a foto escolhida dentro da moldura.
+const fotoInput = document.getElementById("foto");
+const fotoPreview = document.getElementById("fotoPreview");
+const iconePadrao = fotoPreview.innerHTML;
+
+fotoInput.addEventListener("change", () => {
+    const arquivo = fotoInput.files[0];
+
+    if (!arquivo || !arquivo.type.startsWith("image/")) {
+        fotoPreview.innerHTML = iconePadrao;
+        return;
+    }
+
+    const img = document.createElement("img");
+    img.alt = "Foto do paciente";
+    img.src = URL.createObjectURL(arquivo);
+    fotoPreview.replaceChildren(img);
+});
+</script>
+
+</body>
+</html>
