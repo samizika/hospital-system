@@ -285,17 +285,45 @@
 </main>
 
 <script>
-function cadastrar(){
- fetch("http://localhost:3000/atendimento",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body: JSON.stringify({
-    nome: nome.value,
-    cpf: cpf.value,
-    tipo: tipo.value
-  })
- });
- alert("Paciente enviado para triagem");
+async function cadastrar() {
+    const nomePaciente = document.getElementById("nome").value.trim();
+    const cpfPaciente = document.getElementById("cpf").value.trim();
+    const tipoAtendimento = document.getElementById("tipo").value;
+
+    if (!nomePaciente) {
+        alert("Informe o nome do paciente.");
+        return;
+    }
+
+    try {
+        const resposta = await fetch("/atendimento", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nome: nomePaciente,
+                cpf: cpfPaciente,
+                tipo: tipoAtendimento
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Erro ao cadastrar paciente.");
+        }
+
+        alert("Paciente cadastrado e enviado para a triagem!");
+
+        document.getElementById("nome").value = "";
+        document.getElementById("cpf").value = "";
+        document.getElementById("tipo").selectedIndex = 0;
+
+    } catch (erro) {
+        console.error("Erro ao cadastrar:", erro);
+        alert("Não foi possível cadastrar o paciente: " + erro.message);
+    }
 }
 
 // Apenas visual: mostra a foto escolhida dentro da moldura.
